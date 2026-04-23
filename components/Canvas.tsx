@@ -15,9 +15,16 @@ import {
 import "@xyflow/react/dist/style.css";
 
 import { NotebookLMNode } from "./nodes/NotebookLMNode";
+import { GeminiNode } from "./nodes/Gemininode";
 import { Plus, Play } from "lucide-react";
+import { ResearchNode } from "./nodes/Researchnode";
 
-const nodeTypes = { notebooklm: NotebookLMNode };
+const nodeTypes = {
+  notebooklm: NotebookLMNode,
+  gemini: GeminiNode,
+  research: ResearchNode,
+};
+
 const initialNodes: Node[] = [];
 const initialEdges: Edge[] = [];
 
@@ -42,15 +49,21 @@ function getExecutionOrder(nodes: Node[], edges: Edge[]): Node[] {
   nodes.forEach((n) => {
     if (!visited.has(n.id)) order.push(n);
   });
-
   return order;
 }
+
+type NodeType = "notebooklm" | "gemini" | "research";
+
+const NODE_DEFAULTS: Record<NodeType, { label: string }> = {
+  notebooklm: { label: "NotebookLM" },
+  gemini: { label: "Gemini" },
+  research: { label: "Research" },
+};
 
 export const Canvas: React.FC = () => {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const historyRef = React.useRef<{ nodes: Node[]; edges: Edge[] }[]>([]);
-
   const dataChangeHandlers = React.useRef(
     new Map<string, (patch: Record<string, unknown>) => void>(),
   );
@@ -109,14 +122,11 @@ export const Canvas: React.FC = () => {
     [setNodes],
   );
 
-  const addNode = (type: "notebooklm") => {
+  const addNode = (type: NodeType) => {
     setNodes((nds) => {
       pushHistory(nds, edges);
       const id = Math.random().toString(36).substr(2, 9);
-
-      // Register a stable handler in the ref map
       dataChangeHandlers.current.set(id, (patch) => onDataChange(id, patch));
-
       return [
         ...nds,
         {
@@ -127,14 +137,12 @@ export const Canvas: React.FC = () => {
             y: 120 + Math.random() * 200,
           },
           data: {
-            label: "NotebookLM",
+            label: NODE_DEFAULTS[type].label,
             status: "idle",
             query: "",
             files: [],
-            urls: [],
-            researchMode: "fast",
-            advancedSettings: {},
-            // Delegate through the ref so it's always current
+            fileData: [],
+            maxPages: 10,
             onDataChange: (patch: Record<string, unknown>) =>
               dataChangeHandlers.current.get(id)?.(patch),
           },
@@ -160,6 +168,7 @@ export const Canvas: React.FC = () => {
     );
 
     const ordered = getExecutionOrder(nodes, edges);
+    let previousOutput: Record<string, unknown> = {};
 
     for (const node of ordered) {
       setNodeStatus(node.id, "loading");
@@ -173,15 +182,19 @@ export const Canvas: React.FC = () => {
             config: {
               query: node.data.query ?? "",
               files: node.data.files ?? [],
-              fileData: node.data.fileData ?? [], // ← Include base64 data
-              urls: node.data.urls ?? [],
-              researchMode: node.data.researchMode ?? "fast",
-              advancedSettings: node.data.advancedSettings ?? {},
+              fileData: node.data.fileData ?? [],
+              label: node.data.label ?? "",
+              maxPages: node.data.maxPages ?? 10,
+              // Pass previous node output so nodes can consume upstream results
+              previousOutput,
             },
           }),
         });
 
         if (!res.ok) throw new Error(`Node ${node.id} failed`);
+
+        const output = await res.json();
+        previousOutput = output;
         setNodeStatus(node.id, "success");
       } catch {
         setNodeStatus(node.id, "failed");
@@ -190,7 +203,6 @@ export const Canvas: React.FC = () => {
     }
   };
 
-  // Highlight edges connected to selected nodes
   const selectedNodeIds = nodes.filter((n) => n.selected).map((n) => n.id);
   const styledEdges = edges.map((edge) => {
     const highlighted =
@@ -212,10 +224,22 @@ export const Canvas: React.FC = () => {
     <div className="w-full h-screen bg-[#090f1c]">
       <div className="absolute top-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 p-2 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xl shadow-2xl">
         <button
+          onClick={() => addNode("research")}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 border border-amber-500/20 transition-all font-medium text-sm"
+        >
+          <Plus size={16} /> Research
+        </button>
+        <button
           onClick={() => addNode("notebooklm")}
           className="flex items-center gap-2 px-4 py-2 rounded-xl bg-teal-500/10 text-teal-400 hover:bg-teal-500/20 border border-teal-500/20 transition-all font-medium text-sm"
         >
           <Plus size={16} /> NotebookLM
+        </button>
+        <button
+          onClick={() => addNode("gemini")}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 border border-blue-500/20 transition-all font-medium text-sm"
+        >
+          <Plus size={16} /> Gemini
         </button>
         <div className="w-px h-6 bg-white/10 mx-1" />
         <button

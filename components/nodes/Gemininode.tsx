@@ -5,7 +5,7 @@ import { Handle, Position } from "@xyflow/react";
 
 type Status = "idle" | "loading" | "success" | "failed";
 
-interface NotebookLMNodeProps {
+interface GeminiNodeProps {
   data: {
     label?: string;
     status?: Status;
@@ -45,14 +45,11 @@ const Label: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 const STATUS_COLOR: Record<Status, string> = {
   idle: "#333",
   loading: "#f59e0b",
-  success: "#2dd4bf",
+  success: "#4285f4",
   failed: "#ef4444",
 };
 
-export const NotebookLMNode: React.FC<NotebookLMNodeProps> = ({
-  data,
-  selected,
-}) => {
+export const GeminiNode: React.FC<GeminiNodeProps> = ({ data, selected }) => {
   const [expanded, setExpanded] = useState(false);
   const [query, setQuery] = useState(data.query ?? "");
   const [files, setFiles] = useState<string[]>(data.files ?? []);
@@ -99,7 +96,7 @@ export const NotebookLMNode: React.FC<NotebookLMNodeProps> = ({
   return (
     <div
       style={{
-        border: `1px solid ${selected ? "#2dd4bf" : "#333"}`,
+        border: `1px solid ${selected ? "#4285f4" : "#333"}`,
         borderRadius: 8,
         background: "#111",
         color: "#fff",
@@ -118,7 +115,6 @@ export const NotebookLMNode: React.FC<NotebookLMNodeProps> = ({
           gap: 8,
         }}
       >
-        {/* Status dot */}
         <div
           style={{
             width: 6,
@@ -128,9 +124,7 @@ export const NotebookLMNode: React.FC<NotebookLMNodeProps> = ({
             flexShrink: 0,
           }}
         />
-        <span style={{ fontSize: 13, flex: 1 }}>
-          {data.label ?? "NotebookLM"}
-        </span>
+        <span style={{ fontSize: 13, flex: 1 }}>{data.label ?? "Gemini"}</span>
         <button
           onClick={() => setExpanded((v) => !v)}
           className="nodrag"
