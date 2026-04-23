@@ -1,0 +1,32 @@
+<svg viewBox="160 90 380 510" role="img" xmlns="http://www.w3.org/2000/svg">
+  <title>Flowmind icon</title>
+  <desc>Flowmind app icon — minimalist F shape tightly cropped</desc>
+
+  <!-- F spine -->
+  <line x1="220" y1="140" x2="220" y2="540" stroke="#3b82f6" stroke-width="26" stroke-linecap="round"/>
+  <!-- F top branch -->
+  <line x1="220" y1="180" x2="480" y2="180" stroke="#3b82f6" stroke-width="26" stroke-linecap="round"/>
+  <!-- F mid branch -->
+  <line x1="220" y1="360" x2="400" y2="360" stroke="#3b82f6" stroke-width="26" stroke-linecap="round"/>
+
+  <!-- Node: top of spine -->
+  <circle cx="220" cy="140" r="36" fill="#1e3a8a" stroke="#60a5fa" stroke-width="10"/>
+  <circle cx="220" cy="140" r="16" fill="#eff6ff" />
+
+  <!-- Node: top branch end -->
+  <circle cx="480" cy="180" r="42" fill="#1e3a8a" stroke="#60a5fa" stroke-width="10"/>
+  <circle cx="480" cy="180" r="20" fill="#eff6ff" />
+
+  <!-- Node: mid branch junction -->
+  <circle cx="220" cy="360" r="28" fill="#1e3a8a" stroke="#60a5fa" stroke-width="8"/>
+  <circle cx="220" cy="360" r="12" fill="#eff6ff" />
+
+  <!-- Node: mid branch end -->
+  <circle cx="400" cy="360" r="40" fill="#1e3a8a" stroke="#60a5fa" stroke-width="10"/>
+  <circle cx="400" cy="360" r="18" fill="#eff6ff" />
+
+  <!-- Node: bottom of spine -->
+  <circle cx="220" cy="540" r="44" fill="#1e3a8a" stroke="#60a5fa" stroke-width="10"/>
+  <circle cx="220" cy="540" r="20" fill="#eff6ff" />
+
+</svg>
