@@ -13,6 +13,7 @@ interface ResearchNodeProps {
     status?: Status;
     query?: string;
     maxPages?: number;
+    sites?: string[];
     onDataChange?: (patch: Record<string, unknown>) => void;
   };
   selected?: boolean;
@@ -143,6 +144,24 @@ export const ResearchNode: React.FC<ResearchNodeProps> = ({
                   data.onDataChange?.({ maxPages: parseInt(e.target.value) })
                 }
                 className="nodrag accent-orange-500 h-1 cursor-pointer w-full"
+              />
+            </div>
+
+            {/* Specific Sites */}
+            <div className="flex flex-col gap-2">
+              <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">
+                Specific Sites
+              </span>
+              <textarea
+                value={(data.sites ?? []).join(", ")}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  const sitesArr = val.split(",").map((s) => s.trim()).filter(Boolean);
+                  data.onDataChange?.({ sites: sitesArr });
+                }}
+                placeholder="reuters.com, wikipedia.org..."
+                rows={2}
+                className="nodrag w-full bg-[#05080f] border border-gray-800 rounded p-2 text-[10px] text-slate-400 outline-none focus:border-orange-500 transition-colors resize-none"
               />
             </div>
           </div>

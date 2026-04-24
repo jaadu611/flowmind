@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { automateNotebookLM } from "@/lib/automators/notebookAutomator";
 import { askGemini } from "@/lib/automators/geminiAutomator";
 import { askChatGPT } from "@/lib/automators/chatgptAutomator";
+import { askPerplexity } from "@/lib/automators/perplexityAutomator";
 import { ResearchAutomator } from "@/lib/automators/Researchautomator";
 import path from "path";
 import os from "os";
@@ -62,15 +63,17 @@ export async function POST(req: NextRequest) {
     const page = await preparePage(context);
 
     if (type === "research") {
+      console.log(`[Research Node] Executing with sites: ${JSON.stringify(config.sites)}`);
       const automator = new ResearchAutomator(page);
       const result = await automator.run({ 
         query: config.query || "", 
-        maxPages: config.maxPages ?? 3
+        maxPages: config.maxPages ?? 3,
+        sites: config.sites || []
       });
       return NextResponse.json(result);
     }
 
-    if (type === "notebooklm" || type === "gemini" || type === "chatgpt") {
+    if (type === "notebooklm" || type === "gemini" || type === "chatgpt" || type === "perplexity") {
       filePaths = await saveFiles(config.files ?? [], config.fileData ?? []);
       const resultFilesContext = config.previousOutput?.files || config.previousOutput?.data?.files || [];
       const allFiles = [...resultFilesContext, ...filePaths];
@@ -85,6 +88,8 @@ export async function POST(req: NextRequest) {
         result = await automateNotebookLM(page, allFiles, nodePrompt, config.label || "NotebookLM");
       } else if (type === "chatgpt") {
         result = await askChatGPT(page, nodePrompt, allFiles);
+      } else if (type === "perplexity") {
+        result = await askPerplexity(page, nodePrompt, allFiles);
       } else {
         result = await askGemini(page, nodePrompt, allFiles);
       }

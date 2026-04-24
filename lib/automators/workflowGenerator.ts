@@ -18,11 +18,8 @@ The user has provided a high-level goal, and your job is to design a complete wo
 --- USER'S GOAL ---
 "${userPrompt}"
 
---- AVAILABLE NODE REGISTRY ---
-${JSON.stringify(nodeRegistry, null, 2)}
-
 --- INSTRUCTIONS ---
-1. Design a linear or branching workflow using ONLY the node types available in the completely dynamic Registry provided above.
+1. Design a linear or branching workflow using ONLY the node types available in the provided node_registry.json file.
 2. For each node, provide the required React Flow structure:
     - \`id\`: A unique string ID.
     - \`type\`: The exact \`type\` string from the registry.
@@ -43,7 +40,7 @@ Generate ONLY the JSON, nothing else.
 `;
 
   console.log("[WorkflowGenerator] Asking Gemini to build workflow for: ", userPrompt);
-  const rawResponse = await askGemini(page, orchestratorPrompt, []);
+  const rawResponse = await askGemini(page, orchestratorPrompt, [registryPath]);
   
   if (!rawResponse || rawResponse.trim() === "") {
     console.error("[WorkflowGenerator] Gemini failed to respond (empty string returned).");

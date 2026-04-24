@@ -5,6 +5,7 @@ import { Page } from "playwright";
 export interface ResearchConfig {
   query: string;
   maxPages?: number;
+  sites?: string[];
 }
 
 export class ResearchAutomator {
@@ -35,7 +36,15 @@ export class ResearchAutomator {
     config: ResearchConfig,
     dir: string,
   ): Promise<{ allUrls: string[]; files: string[] }> {
-    const { query } = config;
+    let { query } = config;
+    const sites = config.sites || [];
+    
+    // 1. Refine query with site: restrictions if provided
+    if (sites.length > 0) {
+      const siteQuery = sites.map(s => `site:${s.trim()}`).join(" OR ");
+      query = `${query} (${siteQuery})`;
+    }
+
     // Hard cap max Pages limit to 6 to prevent runaway AI scraping instances
     const maxPages = Math.min(config.maxPages ?? 3, 6);
     
@@ -64,6 +73,7 @@ export class ResearchAutomator {
 
       const pageNum = Math.floor(startIndex / 10);
       const searchUrl = `https://www.google.com/search?q=${encodedQuery}&start=${startIndex}&hl=en&gl=us`;
+      console.log(`[Research] Final Google Query URL: ${searchUrl}`);
       console.log(`[Research] Scraping page ${pageNum + 1} (start=${startIndex})...`);
 
       await this.page.goto(searchUrl, {

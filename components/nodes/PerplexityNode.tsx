@@ -8,13 +8,13 @@ import {
   Loader2,
   Clock,
   ChevronDown,
-  MessageSquare,
+  Search,
 } from "lucide-react";
 import gsap from "gsap";
 
 type Status = "idle" | "loading" | "success" | "failed";
 
-interface ChatgptNodeProps {
+interface PerplexityNodeProps {
   data: {
     label?: string;
     status?: Status;
@@ -27,7 +27,10 @@ interface ChatgptNodeProps {
   selected?: boolean;
 }
 
-export const Chatgptnode: React.FC<ChatgptNodeProps> = ({ data, selected }) => {
+export const PerplexityNode: React.FC<PerplexityNodeProps> = ({
+  data,
+  selected,
+}) => {
   const targetConnections = useNodeConnections({ handleType: "target" });
   const sourceConnections = useNodeConnections({ handleType: "source" });
 
@@ -41,6 +44,7 @@ export const Chatgptnode: React.FC<ChatgptNodeProps> = ({ data, selected }) => {
   else if (!isFirst && isLast) roundingClass = "rounded-r-2xl rounded-l-sm";
   else if (!isFirst && !isLast) roundingClass = "rounded-sm";
   else roundingClass = "rounded-2xl";
+
   const [query, setQuery] = useState(data.query ?? "");
   const [files, setFiles] = useState<string[]>(data.files ?? []);
   const [fileData, setFileData] = useState<string[]>(data.fileData ?? []);
@@ -59,15 +63,6 @@ export const Chatgptnode: React.FC<ChatgptNodeProps> = ({ data, selected }) => {
       setQuery(data.query);
     }
   }, [data.query, query]);
-
-  useEffect(() => {
-    if (
-      data.acceptImports !== undefined &&
-      data.acceptImports !== acceptImports
-    ) {
-      setAcceptImports(data.acceptImports);
-    }
-  }, [data.acceptImports, acceptImports]);
 
   useEffect(() => {
     if (contentRef.current) {
@@ -134,14 +129,14 @@ export const Chatgptnode: React.FC<ChatgptNodeProps> = ({ data, selected }) => {
         border-solid
         border
         cursor-grab active:cursor-grabbing
-        ${selected ? "border border-green-500" : "border border-gray-800"}
+        ${selected ? "border border-[#20b2aa]" : "border border-gray-800"}
       `}
     >
       <Handle
         type="target"
         position={Position.Left}
         title="Input Context"
-        className="bg-[#010204]! border! border-green-500! w-2.5! h-2.5! top-[27px]! -translate-y-1/2!"
+        className="bg-[#010204]! border! border-[#20b2aa]! w-2.5! h-2.5! top-[27px]! -translate-y-1/2!"
       />
 
       {/* Header */}
@@ -150,19 +145,20 @@ export const Chatgptnode: React.FC<ChatgptNodeProps> = ({ data, selected }) => {
         onClick={() => setExpanded(!expanded)}
       >
         <img
-          src="/ChatGPT.svg"
-          width={16}
-          height={16}
-          alt="ChatGPT"
-          className="bg-white p-0.5 rounded-full"
+          src="/perplexity-color.svg"
+          width={14}
+          height={14}
+          alt="perplexity"
         />
-        <span className="text-[13px] flex-1">{data.label ?? "ChatGPT"}</span>
+        <span className="text-[13px] flex-1">
+          {data.label ?? "Perplexity Research"}
+        </span>
 
         {status === "idle" && (
           <Clock size={12} className="text-slate-500 shrink-0" />
         )}
         {status === "loading" && (
-          <Loader2 size={12} className="text-[#10a37f] animate-spin shrink-0" />
+          <Loader2 size={12} className="text-[#20b2aa] animate-spin shrink-0" />
         )}
         {status === "success" && (
           <CheckCircle2 size={12} className="text-green-500 shrink-0" />
@@ -196,9 +192,9 @@ export const Chatgptnode: React.FC<ChatgptNodeProps> = ({ data, selected }) => {
                 setQuery(e.target.value);
                 patch({ query: e.target.value });
               }}
-              placeholder="System prompt or query..."
+              placeholder="Research query..."
               rows={3}
-              className="nodrag w-full bg-[#05080f] border border-gray-800 rounded p-2 text-[11px] text-[#f8fafc] outline-none focus:border-green-500 transition-colors resize-none"
+              className="nodrag w-full bg-[#05080f] border border-gray-800 rounded p-2 text-[11px] text-[#f8fafc] outline-none focus:border-[#20b2aa] transition-colors resize-none"
             />
           </div>
 
@@ -210,7 +206,7 @@ export const Chatgptnode: React.FC<ChatgptNodeProps> = ({ data, selected }) => {
               </span>
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="text-[10px] text-[#10a37f] hover:text-green-300 font-bold transition-all cursor-pointer"
+                className="text-[10px] text-[#20b2aa] hover:text-[#40e0d0] font-bold transition-all cursor-pointer"
               >
                 + UPLOAD
               </button>
@@ -243,11 +239,6 @@ export const Chatgptnode: React.FC<ChatgptNodeProps> = ({ data, selected }) => {
             )}
 
             <div className="flex flex-col gap-1.5 max-h-[120px] overflow-y-auto pr-1 custom-scrollbar">
-              {files.length === 0 && (
-                <span className="text-[10px] text-slate-600 italic px-1">
-                  No files attached
-                </span>
-              )}
               {files.map((f, i) => (
                 <div
                   key={i}
@@ -271,7 +262,7 @@ export const Chatgptnode: React.FC<ChatgptNodeProps> = ({ data, selected }) => {
         type="source"
         position={Position.Right}
         title="Execution Output"
-        className="bg-[#010204]! border! border-green-500! w-2.5! h-2.5! top-[27px]! -translate-y-1/2!"
+        className="bg-[#010204]! border! border-[#20b2aa]! w-2.5! h-2.5! top-[27px]! -translate-y-1/2!"
       />
     </div>
   );

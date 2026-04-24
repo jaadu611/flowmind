@@ -18,6 +18,7 @@ import { NotebookLMNode } from "./nodes/NotebookLMNode";
 import { GeminiNode } from "./nodes/Gemininode";
 import { ExportNode } from "./nodes/ExportNode";
 import { Chatgptnode } from "./nodes/Chatgptnode";
+import { PerplexityNode } from "./nodes/PerplexityNode";
 import {
   Search,
   Play,
@@ -120,6 +121,7 @@ const nodeTypes = {
   notebooklm: NotebookLMNode,
   gemini: GeminiNode,
   chatgpt: Chatgptnode,
+  perplexity: PerplexityNode,
   research: ResearchNode,
   export_file: ExportNode,
 };
@@ -155,6 +157,7 @@ type NodeType =
   | "notebooklm"
   | "gemini"
   | "chatgpt"
+  | "perplexity"
   | "research"
   | "export_file";
 
@@ -162,6 +165,7 @@ const NODE_DEFAULTS: Record<NodeType, { label: string }> = {
   notebooklm: { label: "NotebookLM" },
   gemini: { label: "Gemini" },
   chatgpt: { label: "ChatGPT" },
+  perplexity: { label: "Perplexity Research" },
   research: { label: "Research" },
   export_file: { label: "Export File" },
 };
@@ -354,6 +358,7 @@ export const Canvas: React.FC = () => {
 
     setIsValidating(true);
     let currentNodes = [...nodes];
+    console.log("[Workflow] Starting run with nodes:", JSON.stringify(currentNodes.map(n => ({ id: n.id, type: n.type, sites: n.data.sites })), null, 2));
 
     try {
       const checkRes = await fetch("/api/check-workflow", {
@@ -425,12 +430,7 @@ export const Canvas: React.FC = () => {
             body: JSON.stringify({
               type: node.type,
               config: {
-                query: node.data.query ?? "",
-                files: node.data.files ?? [],
-                fileData: node.data.fileData ?? [],
-                label: node.data.label ?? "",
-                maxPages: node.data.maxPages ?? 10,
-                mode: node.data.mode ?? "deep",
+                ...node.data,
                 previousOutput: mergedOutput,
               },
             }),
@@ -557,7 +557,7 @@ export const Canvas: React.FC = () => {
           <button
             onClick={generateAIWorkflow}
             disabled={isGenerating || !generationPrompt.trim()}
-            className="text-slate-500 hover:text-blue-400 disabled:opacity-30 disabled:hover:text-slate-500 transition-colors flex items-center justify-center p-1"
+            className="text-slate-500 hover:text-blue-400 disabled:opacity-30 disabled:hover:text-slate-500 transition-all flex items-center justify-center p-1.5 cursor-pointer active:scale-90"
             title="Compile Workflow"
           >
             {isGenerating ? (
@@ -633,6 +633,20 @@ export const Canvas: React.FC = () => {
                         description: "Web search and data extraction",
                         icon: <Search size={14} />,
                         color: "#3b82f6",
+                      },
+                      {
+                        type: "perplexity",
+                        label: "Perplexity Research",
+                        description: "Fast, cited research snippets",
+                        icon: (
+                          <Image
+                            src={"/perplexity-color.svg"}
+                            alt="perplexity"
+                            height={14}
+                            width={14}
+                          />
+                        ),
+                        color: "#20b2aa",
                       },
                     ],
                   },

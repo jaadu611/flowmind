@@ -41,8 +41,18 @@ export async function askChatGPT(
   await page.keyboard.insertText(query);
   await page.waitForTimeout(500);
 
-  // Submit
+  // Submit via Enter and fallback to Click
   await page.keyboard.press("Enter");
+  await page.waitForTimeout(500);
+
+  // Fallback: Click the submit button if Enter didn't trigger it
+  try {
+    // ChatGPT send button selector
+    const submitBtn = 'button[data-testid="send-button"], button[aria-label*="Send prompt"]';
+    if (await page.isVisible(submitBtn)) {
+      await page.click(submitBtn);
+    }
+  } catch (e) {}
 
   // 2. Poll for Completion using stability mechanics
   const startTime = Date.now();

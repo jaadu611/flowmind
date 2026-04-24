@@ -1,13 +1,25 @@
 {
   "research": {
     "type": "research",
-    "description": "Web search and data extraction. Crawls the web to find relevant information.",
+    "description": "DEEP DATA HARVESTER. Crawls multiple websites and extracts full-page text into raw files. Use this ONLY when the user needs massive amounts of raw context for 'NotebookLM' to analyze (e.g., building a dense historical report or technical manual). Overkill for simple questions.",
     "accepts": {
       "query": "The exact search query string to search for on the web.",
-      "maxPages": "(Optional) Integer number of pages to scrape. HARD CAP is 6. Higher values will be ignored."
+      "maxPages": "(Optional) Integer number of pages to scrape. HARD CAP is 6. Higher values will be ignored.",
+      "sites": "(Optional) Array of strings representing specific domains to restrict research to (e.g. ['wikipedia.org', 'reuters.com'])."
     },
     "default_data": {
       "label": "Research Data"
+    }
+  },
+  "perplexity": {
+    "type": "perplexity",
+    "description": "FAST ANSWERS & CITATIONS. Uses AI to synthesize a clean, cited summary from live web results. Use this for general queries, quick facts, current news, or 'how-to' questions where deep raw text harvesting is not required.",
+    "accepts": {
+      "query": "The research query or question for Perplexity to answer.",
+      "acceptImports": "(Optional) boolean. Set to false ONLY if this node should explicitly ignore all incoming upstream files/data. Default true."
+    },
+    "default_data": {
+      "label": "Perplexity Research"
     }
   },
   "gemini": {

@@ -38,18 +38,30 @@ export async function askGemini(
   // Use native Playwright keyboard bindings; DOM evaluate often misses React state triggers
   await page.click(inputSelector);
   await page.waitForTimeout(200);
-  await page.keyboard.insertText(query);
-  await page.waitForTimeout(500);
+  await page.keyboard.insertText(query); // instantaneous insertion
+  await page.waitForTimeout(1000); // Wait for Lexical state to fully sync
 
-  await page.waitForTimeout(500); // Wait for input to register and button to enable
+  // Submit via Enter and fallback to Click
+  // 1. Wait for Send button to enable (this confirms uploads are finished)
+  const sendBtnSelector = 'button[aria-label*="Send"], button:has(svg path[d*="M2.01 21L23 12 2.01 3"]), button.send-button';
   
   try {
-    await page.keyboard.press("Enter");
-  } catch(e) {}
+    await page.waitForFunction((selector) => {
+      const btn = document.querySelector(selector) as HTMLButtonElement;
+      return btn && !btn.disabled && btn.getAttribute('aria-disabled') !== 'true';
+    }, sendBtnSelector, { timeout: 30000 });
+  } catch(e) {
+    console.warn("[Gemini] Ready check timed out, attempting blind submission...");
+  }
 
+  await page.keyboard.press("Enter");
+  await page.waitForTimeout(800); 
+  
   try {
-    const sendBtn = await page.waitForSelector('button[aria-label="Send message"]', { timeout: 3000 });
-    await sendBtn.click({ force: true });
+    const btn = await page.waitForSelector(sendBtnSelector, { state: 'visible', timeout: 3000 });
+    if (btn && await btn.isEnabled()) {
+        await btn.click();
+    }
   } catch(e) {}
 
   // 3. Wait for Response & Extract
@@ -70,7 +82,7 @@ export async function askGemini(
       return { text, isFin };
     });
 
-    if (res?.isFin) {
+    if (res?.isFin && res.text.length > 20) {
       try {
         await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
         
