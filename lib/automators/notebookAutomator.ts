@@ -115,6 +115,8 @@ export async function automateNotebookLM(
 
   // 5. Poll for Response
   const startTime = Date.now();
+  let lastLength = 0;
+  let stableCount = 0;
 
   while (Date.now() - startTime < 300000) {
     const res = await page.evaluate(() => {
@@ -129,7 +131,7 @@ export async function automateNotebookLM(
 
       const isGenerating =
         findDeep(
-          '.loading-indicator, [aria-label*="Generating"], .generating, .response-loading',
+          '.loading-indicator, [aria-label*="Generating"], .generating, .response-loading, button[aria-label*="Stop"]',
         ).length > 0;
       const containers = findDeep(
         '.model-response, [class*="markdown"], [class*="response-text"], .message-content',
@@ -141,7 +143,15 @@ export async function automateNotebookLM(
     });
 
     if (res && res.text.length > 50 && !res.isGenerating) {
-      await page.waitForTimeout(500); // Small stability buffer
+      if (res.text.length === lastLength) {
+        stableCount++;
+      } else {
+        lastLength = res.text.length;
+        stableCount = 0;
+      }
+
+      // Require text to be purely stable for 3 full seconds (6 intervals of 500ms)
+      if (stableCount >= 6) {
       try {
         await page
           .context()
@@ -188,6 +198,9 @@ export async function automateNotebookLM(
         `[NotebookLM] Success: Extracted from DOM (${res.text.length} chars).`,
       );
       return res.text;
+      }
+    } else {
+      stableCount = 0; // Reset if generator spins back up
     }
     await page.waitForTimeout(500);
   }

@@ -1,0 +1,10 @@
+{
+  "status": "success | failed",
+  "node_type": "<TYPE_OF_NODE_EXECUTED>",
+  "files": [
+    "<ABSOLUTE_PATH_TO_FILE_1>",
+    "<ABSOLUTE_PATH_TO_FILE_2>"
+  ],
+  "execution_time_ms": 15000,
+  "error": null
+}

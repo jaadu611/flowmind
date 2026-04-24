@@ -14,6 +14,7 @@ interface NotebookLMNodeProps {
     query?: string;
     files?: string[];
     fileData?: string[];
+    acceptImports?: boolean;
     onDataChange?: (patch: Record<string, unknown>) => void;
   };
   selected?: boolean;
@@ -39,12 +40,25 @@ export const NotebookLMNode: React.FC<NotebookLMNodeProps> = ({
   const [query, setQuery] = useState(data.query ?? "");
   const [files, setFiles] = useState<string[]>(data.files ?? []);
   const [fileData, setFileData] = useState<string[]>(data.fileData ?? []);
+  const [acceptImports, setAcceptImports] = useState(data.acceptImports ?? true);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
   const status: Status = data.status ?? "idle";
   const patch = (update: Record<string, unknown>) =>
     data.onDataChange?.(update);
+
+  useEffect(() => {
+    if (data.query !== undefined && data.query !== query) {
+      setQuery(data.query);
+    }
+  }, [data.query, query]);
+
+  useEffect(() => {
+    if (data.acceptImports !== undefined && data.acceptImports !== acceptImports) {
+      setAcceptImports(data.acceptImports);
+    }
+  }, [data.acceptImports, acceptImports]);
 
   useEffect(() => {
     if (contentRef.current) {
@@ -183,6 +197,22 @@ export const NotebookLMNode: React.FC<NotebookLMNodeProps> = ({
                 onChange={handleFileSelect}
               />
             </div>
+
+            {targetConnections.length > 0 && acceptImports && (
+              <div className="flex justify-between items-center bg-[#170e0a] rounded p-[4px_8px] text-[10px] text-[#c96a2e] border border-[#8b4513]/30 mb-1">
+                <span className="truncate flex-1 italic">Accepting imports from previous node</span>
+                <button
+                  onClick={() => {
+                     setAcceptImports(false);
+                     patch({ acceptImports: false });
+                  }}
+                  className="nodrag ml-2 text-slate-500 hover:text-red-400 transition-all cursor-pointer"
+                  title="Cancel external imports"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
 
             <div className="flex flex-col gap-1.5 max-h-[120px] overflow-y-auto pr-1 custom-scrollbar">
               {files.length === 0 && (

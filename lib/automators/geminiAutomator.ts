@@ -32,19 +32,25 @@ export async function askGemini(
     await page.waitForTimeout(300); 
   }
 
-  // 2. Send Query (Prompt)
   const inputSelector = 'div[aria-label="Enter a prompt for Gemini"], .ql-editor.textarea';
   await page.waitForSelector(inputSelector);
-  await page.evaluate(({ selector, msg }) => {
-    const el = document.querySelector(selector) as HTMLElement;
-    if (el) {
-      el.innerText = msg;
-      el.dispatchEvent(new Event("input", { bubbles: true }));
-    }
-  }, { selector: inputSelector, msg: query });
+  
+  // Use native Playwright keyboard bindings; DOM evaluate often misses React state triggers
+  await page.click(inputSelector);
+  await page.waitForTimeout(200);
+  await page.keyboard.insertText(query);
+  await page.waitForTimeout(500);
 
-  const sendBtn = await page.waitForSelector('button[aria-label="Send message"]');
-  await sendBtn.click();
+  await page.waitForTimeout(500); // Wait for input to register and button to enable
+  
+  try {
+    await page.keyboard.press("Enter");
+  } catch(e) {}
+
+  try {
+    const sendBtn = await page.waitForSelector('button[aria-label="Send message"]', { timeout: 3000 });
+    await sendBtn.click({ force: true });
+  } catch(e) {}
 
   // 3. Wait for Response & Extract
   const start = Date.now();

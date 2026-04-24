@@ -1,0 +1,56 @@
+{
+  "research": {
+    "type": "research",
+    "description": "Web search and data extraction. Crawls the web to find relevant information.",
+    "accepts": {
+      "query": "The exact search query string to search for on the web.",
+      "maxPages": "(Optional) Integer number of pages to scrape. HARD CAP is 6. Higher values will be ignored."
+    },
+    "default_data": {
+      "label": "Research Data"
+    }
+  },
+  "gemini": {
+    "type": "gemini",
+    "description": "Advanced reasoning, text generation, and dynamic analysis. Combines reasoning with data provided from upstream nodes.",
+    "accepts": {
+      "query": "The detailed prompt instruction detailing exactly how it should analyze the connected upstream data.",
+      "acceptImports": "(Optional) boolean. Set to false ONLY if this node should explicitly ignore all incoming upstream files/data. Default true."
+    },
+    "default_data": {
+      "label": "Gemini AI"
+    }
+  },
+  "chatgpt": {
+    "type": "chatgpt",
+    "description": "Advanced structural reasoning and formatting. Uses OpenAI's ChatGPT. Exceptionally powerful for generating rigorous academic structure, LaTeX code bindings, and highly structured manuals.",
+    "accepts": {
+      "query": "The detailed prompt instruction detailing exactly how it should analyze the connected upstream data.",
+      "acceptImports": "(Optional) boolean. Set to false ONLY if this node should explicitly ignore all incoming upstream files/data. Default true."
+    },
+    "default_data": {
+      "label": "ChatGPT"
+    }
+  },
+  "notebooklm": {
+    "type": "notebooklm",
+    "description": "Deep QA, complex synthesis, and grounding capabilities strictly tied to files it receives.",
+    "accepts": {
+      "query": "The specific question or synthesis command to execute against the context files.",
+      "acceptImports": "(Optional) boolean. Set to false ONLY if this node should explicitly ignore all incoming upstream files/data. Default true."
+    },
+    "default_data": {
+      "label": "NotebookLM"
+    }
+  },
+  "export_file": {
+    "type": "export_file",
+    "description": "Saves the generated output from upstream nodes into a physical formatted file. ALWAYS append this as the final node if the user explicitly asks to 'generate a .pdf' or 'save to a file'. Supported formats: .pdf, .html, .json, .md, .txt.",
+    "accepts": {
+      "filename": "The exact name of the file to save locally, ending in .pdf, .html, .json, .md, or .txt (e.g., 'final_report.html')"
+    },
+    "default_data": {
+      "label": "Export File"
+    }
+  }
+}

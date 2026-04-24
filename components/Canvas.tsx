@@ -16,6 +16,8 @@ import "@xyflow/react/dist/style.css";
 
 import { NotebookLMNode } from "./nodes/NotebookLMNode";
 import { GeminiNode } from "./nodes/Gemininode";
+import { ExportNode } from "./nodes/ExportNode";
+import { Chatgptnode } from "./nodes/Chatgptnode";
 import {
   Search,
   Play,
@@ -25,6 +27,10 @@ import {
   Undo2,
   Redo2,
   X,
+  Sparkles,
+  Loader2,
+  FileDown,
+  MessageSquare,
 } from "lucide-react";
 import { ResearchNode } from "./nodes/Researchnode";
 import Image from "next/image";
@@ -113,7 +119,9 @@ const SidebarCategory = ({ category, onAddNode, nodeSearch }: any) => {
 const nodeTypes = {
   notebooklm: NotebookLMNode,
   gemini: GeminiNode,
+  chatgpt: Chatgptnode,
   research: ResearchNode,
+  export_file: ExportNode,
 };
 
 const initialNodes: Node[] = [];
@@ -143,12 +151,19 @@ function getExecutionOrder(nodes: Node[], edges: Edge[]): Node[] {
   return order;
 }
 
-type NodeType = "notebooklm" | "gemini" | "research";
+type NodeType =
+  | "notebooklm"
+  | "gemini"
+  | "chatgpt"
+  | "research"
+  | "export_file";
 
 const NODE_DEFAULTS: Record<NodeType, { label: string }> = {
   notebooklm: { label: "NotebookLM" },
   gemini: { label: "Gemini" },
+  chatgpt: { label: "ChatGPT" },
   research: { label: "Research" },
+  export_file: { label: "Export File" },
 };
 
 export const Canvas: React.FC = () => {
@@ -272,8 +287,9 @@ export const Canvas: React.FC = () => {
             query: "",
             files: [],
             fileData: [],
+            acceptImports: true,
             maxPages: type === "research" ? 3 : 10,
-            mode: type === "research" ? "deep" : undefined,
+            filename: type === "export_file" ? "report.pdf" : undefined,
             onDataChange: (patch: Record<string, unknown>) =>
               dataChangeHandlers.current.get(id)?.(patch),
           },
@@ -291,46 +307,151 @@ export const Canvas: React.FC = () => {
     );
   };
 
+  const [isValidating, setIsValidating] = React.useState(false);
+  const [isGenerating, setIsGenerating] = React.useState(false);
+  const [generationPrompt, setGenerationPrompt] = React.useState("");
+
+  const generateAIWorkflow = async () => {
+    if (!generationPrompt.trim()) return;
+    setIsGenerating(true);
+    try {
+      const res = await fetch("/api/generate-workflow", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: generationPrompt }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.status === "success" && data.workflow) {
+          // ensure data change handlers load properly by triggering them with default handlers
+          const newNodes = data.workflow.nodes.map((n: any) => ({
+            ...n,
+            data: {
+              ...n.data,
+              onDataChange: (patch: Record<string, unknown>) =>
+                onDataChange(n.id, patch),
+            },
+          }));
+          const newEdges = data.workflow.edges.map((e: any) => ({
+            ...e,
+            animated: true,
+            style: { stroke: "#334155", strokeWidth: 1 },
+          }));
+          pushHistory(nodes, edges);
+          setNodes(newNodes);
+          setEdges(newEdges);
+          setGenerationPrompt("");
+        }
+      }
+    } catch (err) {
+      console.error("Failed to generate workflow:", err);
+    }
+    setIsGenerating(false);
+  };
+
   const runWorkflow = async () => {
     if (nodes.length === 0) return;
+
+    setIsValidating(true);
+    let currentNodes = [...nodes];
+
+    try {
+      const checkRes = await fetch("/api/check-workflow", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nodes: currentNodes,
+          edges,
+          userQuery: generationPrompt || "Execute workflow",
+        }),
+      });
+
+      if (checkRes.ok) {
+        const checkData = await checkRes.json();
+        if (checkData.status === "success" && checkData.sanitized_nodes) {
+          currentNodes = checkData.sanitized_nodes;
+          // Update UI to show the AI-filled fields
+          setNodes(currentNodes);
+        }
+      }
+    } catch (err) {
+      console.warn(
+        "Workflow validation skipped or failed, running with current nodes:",
+        err,
+      );
+    }
+
+    setIsValidating(false);
 
     setNodes((nds) =>
       nds.map((n) => ({ ...n, data: { ...n.data, status: "idle" } })),
     );
 
-    const ordered = getExecutionOrder(nodes, edges);
-    let previousOutput: Record<string, unknown> = {};
+    const ordered = getExecutionOrder(currentNodes, edges);
+    const nodePromises: Record<string, Promise<any>> = {};
 
     for (const node of ordered) {
-      setNodeStatus(node.id, "loading");
+      nodePromises[node.id] = (async () => {
+        // Find dependencies
+        const incomingEdges = edges.filter((e) => e.target === node.id);
+        const parentPromises = incomingEdges.map((e) => nodePromises[e.source]);
 
-      try {
-        const res = await fetch("/api/run-node", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            type: node.type,
-            config: {
-              query: node.data.query ?? "",
-              files: node.data.files ?? [],
-              fileData: node.data.fileData ?? [],
-              label: node.data.label ?? "",
-              maxPages: node.data.maxPages ?? 10,
-              // Pass previous node output so nodes can consume upstream results
-              previousOutput,
-            },
-          }),
-        });
+        // Wait for all parents to finish
+        const parentOutputs = await Promise.all(parentPromises);
 
-        if (!res.ok) throw new Error(`Node ${node.id} failed`);
+        let mergedOutput: any = { files: [], data: "" };
+        const acceptImports = node.data.acceptImports !== false; // true by default
 
-        const output = await res.json();
-        previousOutput = output;
-        setNodeStatus(node.id, "success");
-      } catch {
-        setNodeStatus(node.id, "failed");
-        break;
-      }
+        if (acceptImports && parentOutputs.length > 0) {
+          parentOutputs.forEach((out) => {
+            if (!out) return;
+            if (out.files && Array.isArray(out.files)) {
+              mergedOutput.files.push(...out.files);
+            }
+            if (typeof out.data === "string") {
+              mergedOutput.data += (mergedOutput.data ? "\n\n" : "") + out.data;
+            } else if (out.data?.files) {
+              mergedOutput.files.push(...out.data.files);
+            }
+          });
+        }
+
+        setNodeStatus(node.id, "loading");
+
+        try {
+          const res = await fetch("/api/run-node", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              type: node.type,
+              config: {
+                query: node.data.query ?? "",
+                files: node.data.files ?? [],
+                fileData: node.data.fileData ?? [],
+                label: node.data.label ?? "",
+                maxPages: node.data.maxPages ?? 10,
+                mode: node.data.mode ?? "deep",
+                previousOutput: mergedOutput,
+              },
+            }),
+          });
+
+          if (!res.ok) throw new Error(`Node ${node.id} failed`);
+
+          const output = await res.json();
+          setNodeStatus(node.id, "success");
+          return output;
+        } catch (err) {
+          setNodeStatus(node.id, "failed");
+          throw err; // Propagate failure to downstream nodes
+        }
+      })();
+    }
+
+    try {
+      await Promise.all(Object.values(nodePromises));
+    } catch (err) {
+      console.warn("Workflow execution halted due to a node failure.");
     }
   };
 
@@ -422,14 +543,48 @@ export const Canvas: React.FC = () => {
           </div>
         </div>
 
+        <div className="flex-1 max-w-xl mx-4 flex items-center bg-[#010204] border border-gray-800 rounded px-2 h-7 focus-within:border-blue-500/50 transition-colors">
+          <input
+            type="text"
+            value={generationPrompt}
+            onChange={(e) => setGenerationPrompt(e.target.value)}
+            placeholder="Describe a workflow to generate... (e.g. Research quantum physics and summarize it)"
+            className="w-full bg-transparent text-xs text-slate-300 outline-none placeholder:text-slate-600 font-medium"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") generateAIWorkflow();
+            }}
+          />
+          <button
+            onClick={generateAIWorkflow}
+            disabled={isGenerating || !generationPrompt.trim()}
+            className="text-slate-500 hover:text-blue-400 disabled:opacity-30 disabled:hover:text-slate-500 transition-colors flex items-center justify-center p-1"
+            title="Compile Workflow"
+          >
+            {isGenerating ? (
+              <Loader2 size={12} className="animate-spin" />
+            ) : (
+              <Sparkles size={12} />
+            )}
+          </button>
+        </div>
+
         <div className="flex items-center">
           <button
             onClick={runWorkflow}
-            disabled={nodes.length === 0}
-            className="flex items-center justify-center p-1.5 rounded bg-blue-600 text-white hover:bg-blue-500 disabled:opacity-20 disabled:cursor-not-allowed transition-all font-bold active:scale-[0.98] cursor-pointer"
+            disabled={nodes.length === 0 || isValidating}
+            className="flex items-center gap-2 justify-center p-[6px_12px] rounded bg-blue-600 text-white hover:bg-blue-500 disabled:opacity-20 disabled:cursor-not-allowed transition-all font-bold active:scale-[0.98] cursor-pointer"
             title="Execute Workflow"
           >
-            <Play size={14} fill="currentColor" />
+            {isValidating ? (
+              <span className="text-xs uppercase tracking-wider animate-pulse">
+                Checking...
+              </span>
+            ) : (
+              <>
+                <span className="text-xs uppercase tracking-wider">Run</span>
+                <Play size={12} fill="currentColor" />
+              </>
+            )}
           </button>
         </div>
       </div>
@@ -512,6 +667,35 @@ export const Canvas: React.FC = () => {
                           />
                         ),
                         color: "#a855f7",
+                      },
+                      {
+                        type: "chatgpt",
+                        label: "ChatGPT",
+                        description:
+                          "Advanced structural reasoning (LaTeX natively)",
+                        icon: (
+                          <Image
+                            src={"/ChatGPT.svg"}
+                            alt="gemini"
+                            className="bg-white p-0.5 rounded-full"
+                            height={16}
+                            width={16}
+                          />
+                        ),
+                        color: "#10a37f",
+                      },
+                    ],
+                  },
+                  {
+                    title: "Actions",
+                    nodes: [
+                      {
+                        type: "export_file",
+                        label: "Export File",
+                        description:
+                          "Compiles contextual output and renders a physical .pdf or .md file.",
+                        icon: <FileDown size={14} />,
+                        color: "#f97316",
                       },
                     ],
                   },

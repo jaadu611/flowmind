@@ -2,12 +2,12 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { Handle, Position, useNodeConnections } from "@xyflow/react";
-import { CheckCircle2, XCircle, Loader2, Clock, ChevronDown } from "lucide-react";
+import { CheckCircle2, XCircle, Loader2, Clock, ChevronDown, MessageSquare } from "lucide-react";
 import gsap from "gsap";
 
 type Status = "idle" | "loading" | "success" | "failed";
 
-interface GeminiNodeProps {
+interface ChatgptNodeProps {
   data: {
     label?: string;
     status?: Status;
@@ -20,7 +20,7 @@ interface GeminiNodeProps {
   selected?: boolean;
 }
 
-export const GeminiNode: React.FC<GeminiNodeProps> = ({ data, selected }) => {
+export const Chatgptnode: React.FC<ChatgptNodeProps> = ({ data, selected }) => {
   const targetConnections = useNodeConnections({ handleType: "target" });
   const sourceConnections = useNodeConnections({ handleType: "source" });
   
@@ -122,14 +122,14 @@ export const GeminiNode: React.FC<GeminiNodeProps> = ({ data, selected }) => {
         border-solid
         border
         cursor-grab active:cursor-grabbing
-        ${selected ? "border border-blue-500" : "border border-gray-800"}
+        ${selected ? "border border-green-500" : "border border-gray-800"}
       `}
     >
       <Handle
         type="target"
         position={Position.Left}
         title="Input Context"
-        className="bg-[#010204]! border! border-blue-500! w-2.5! h-2.5! top-[27px]! -translate-y-1/2!"
+        className="bg-[#010204]! border! border-green-500! w-2.5! h-2.5! top-[27px]! -translate-y-1/2!"
       />
 
       {/* Header */}
@@ -137,11 +137,11 @@ export const GeminiNode: React.FC<GeminiNodeProps> = ({ data, selected }) => {
         className="p-[10px_12px] flex items-center gap-1.5 cursor-pointer select-none"
         onClick={() => setExpanded(!expanded)}
       >
-        <img src="/gemini.svg" width={14} height={14} alt="Gemini" />
-        <span className="text-[13px] flex-1">{data.label ?? "Gemini"}</span>
+        <MessageSquare size={14} className="text-[#10a37f]" />
+        <span className="text-[13px] flex-1">{data.label ?? "ChatGPT"}</span>
         
         {status === "idle" && <Clock size={12} className="text-slate-500 shrink-0" />}
-        {status === "loading" && <Loader2 size={12} className="text-blue-500 animate-spin shrink-0" />}
+        {status === "loading" && <Loader2 size={12} className="text-[#10a37f] animate-spin shrink-0" />}
         {status === "success" && <CheckCircle2 size={12} className="text-green-500 shrink-0" />}
         {status === "failed" && <XCircle size={12} className="text-red-500 shrink-0" />}
 
@@ -169,7 +169,7 @@ export const GeminiNode: React.FC<GeminiNodeProps> = ({ data, selected }) => {
               }}
               placeholder="System prompt or query..."
               rows={3}
-              className="nodrag w-full bg-[#05080f] border border-gray-800 rounded p-2 text-[11px] text-[#f8fafc] outline-none focus:border-blue-500 transition-colors resize-none"
+              className="nodrag w-full bg-[#05080f] border border-gray-800 rounded p-2 text-[11px] text-[#f8fafc] outline-none focus:border-green-500 transition-colors resize-none"
             />
           </div>
 
@@ -181,7 +181,7 @@ export const GeminiNode: React.FC<GeminiNodeProps> = ({ data, selected }) => {
               </span>
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="text-[10px] text-blue-400 hover:text-blue-300 font-bold transition-all cursor-pointer"
+                className="text-[10px] text-[#10a37f] hover:text-green-300 font-bold transition-all cursor-pointer"
               >
                 + UPLOAD
               </button>
@@ -240,7 +240,7 @@ export const GeminiNode: React.FC<GeminiNodeProps> = ({ data, selected }) => {
         type="source"
         position={Position.Right}
         title="Execution Output"
-        className="bg-[#010204]! border! border-blue-500! w-2.5! h-2.5! top-[27px]! -translate-y-1/2!"
+        className="bg-[#010204]! border! border-green-500! w-2.5! h-2.5! top-[27px]! -translate-y-1/2!"
       />
     </div>
   );
